@@ -31,6 +31,7 @@ class EngineAPIResource(APIResource):
         cls,
         api_key=None,
         api_base=None,
+        api_auth_header=None,
         idempotency_key=None,
         request_id=None,
         api_version=None,
@@ -58,6 +59,7 @@ class EngineAPIResource(APIResource):
         requestor = api_requestor.APIRequestor(
             api_key,
             api_base=api_base,
+            api_auth_header=api_auth_header,
             api_version=api_version,
             organization=organization,
         )

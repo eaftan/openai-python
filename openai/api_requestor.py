@@ -80,10 +80,11 @@ def parse_stream(rbody):
 
 class APIRequestor:
     def __init__(
-        self, key=None, client=None, api_base=None, api_version=None, organization=None
+        self, key=None, client=None, api_base=None, api_auth_header=None, api_version=None, organization=None
     ):
         self.api_base = api_base or openai.api_base
         self.api_key = key
+        self.api_auth_header = api_auth_header
         self.api_version = api_version or openai.api_version
         self.organization = organization or openai.organization
 
@@ -195,7 +196,7 @@ class APIRequestor:
                 error_data.get("message"), rbody, rcode, resp, rheaders
             )
 
-    def request_headers(self, api_key, method, extra):
+    def request_headers(self, api_auth_header, method, extra):
         user_agent = "OpenAI/v1 PythonBindings/%s" % (version.VERSION,)
         if openai.app_info:
             user_agent += " " + self.format_app_info(openai.app_info)
@@ -216,7 +217,7 @@ class APIRequestor:
             "X-OpenAI-Client-User-Agent": json.dumps(ua),
             "User-Agent": user_agent,
         }
-        headers.update(openai.api_key_to_header_fn(api_key))
+        headers.update(api_auth_header)
 
         if self.organization:
             headers["OpenAI-Organization"] = self.organization
@@ -242,7 +243,6 @@ class APIRequestor:
             my_api_key = self.api_key
         else:
             from openai import api_key
-
             my_api_key = api_key
 
         if my_api_key is None:
@@ -253,6 +253,11 @@ class APIRequestor:
                 "for details, or email support@openai.com if you have any "
                 "questions."
             )
+
+        if self.auth_header:
+            my_auth_header = self.auth_header
+        else:
+            my_auth_header = {"Authorization": f"Bearer {my_api_key}"}
 
         abs_url = "%s%s" % (self.api_base, url)
         headers = {}
@@ -308,7 +313,7 @@ class APIRequestor:
                 "assistance." % (method,)
             )
 
-        headers = self.request_headers(my_api_key, method, headers)
+        headers = self.request_headers(my_auth_header, method, headers)
         if supplied_headers is not None:
             for key, value in supplied_headers.items():
                 headers[key] = value
@@ -317,6 +322,7 @@ class APIRequestor:
         util.log_debug(
             "Post details", post_data=encoded_params, api_version=self.api_version
         )
+        util.log_debug("Headers", headers=headers)
 
         rbody, rcode, rheaders, stream = self._client.request_with_retries(
             method, abs_url, headers, post_data, stream=stream
