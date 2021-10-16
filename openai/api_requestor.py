@@ -254,8 +254,8 @@ class APIRequestor:
                 "questions."
             )
 
-        if self.auth_header:
-            my_auth_header = self.auth_header
+        if self.api_auth_header:
+            my_auth_header = self.api_auth_header
         else:
             my_auth_header = {"Authorization": f"Bearer {my_api_key}"}
 
